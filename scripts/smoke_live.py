@@ -123,6 +123,28 @@ def lifecycle_checks() -> None:
         section(f"edit_message({token!r}, {msg_id}, 'edited by smoke test')")
         print(f"  {server.edit_message(token, msg_id, 'edited by smoke test')}")
 
+        section(f"add_reaction({token!r}, {msg_id}, '👍')")
+        print(f"  {server.add_reaction(token, msg_id, '👍')}")
+
+        section(f"list_reactions({token!r}, {msg_id})")
+        print(f"  {server.list_reactions(token, msg_id)}")
+
+        section(f"remove_reaction({token!r}, {msg_id}, '👍')")
+        print(f"  {server.remove_reaction(token, msg_id, '👍')}")
+
+        section(f"set_reminder({token!r}, {msg_id})")
+        # A fixed far-future timestamp (2030-01-01) — the value is irrelevant for
+        # the smoke test, which deletes the reminder again immediately.
+        remind_at = 1893456000
+        try:
+            print(f"  {server.set_reminder(token, msg_id, remind_at)}")
+            section(f"get_reminder({token!r}, {msg_id})")
+            print(f"  {server.get_reminder(token, msg_id)}")
+            section(f"delete_reminder({token!r}, {msg_id})")
+            print(f"  {server.delete_reminder(token, msg_id)}")
+        except Exception as exc:  # noqa: BLE001 — remind-me-later capability may be off
+            print(f"  (skipped reminders: {type(exc).__name__}: {exc})")
+
         section(f"mark_as_read({token!r}, last_read_message={msg_id})")
         print(f"  {server.mark_as_read(token, last_read_message=msg_id)}")
 

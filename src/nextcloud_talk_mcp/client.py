@@ -67,8 +67,8 @@ class OCSClient:
     ) -> Any:
         return self.request("GET", path, params=params, timeout=timeout)
 
-    def post(self, path: str, *, data: dict[str, Any] | None = None) -> Any:
-        return self.request("POST", path, data=data)
+    def post(self, path: str, *, data: dict[str, Any] | None = None, app: str | None = None) -> Any:
+        return self.request("POST", path, data=data, app=app)
 
     def put(self, path: str, *, data: dict[str, Any] | None = None) -> Any:
         return self.request("PUT", path, data=data)
@@ -84,8 +84,14 @@ class OCSClient:
         params: dict[str, Any] | None = None,
         data: dict[str, Any] | None = None,
         timeout: float | None = None,
+        app: str | None = None,
     ) -> Any:
-        url = f"{self._base}{path}"
+        # `app` overrides the OCS app base path (default: spreed). Used for the
+        # files_sharing endpoint, which lives outside the Talk app.
+        if app is None:
+            url = f"{self._base}{path}"
+        else:
+            url = f"{self._settings.nc_url}/ocs/v2.php/apps/{app}{path}"
         retriable = method.upper() in _IDEMPOTENT_METHODS
         last_transport_exc: Exception | None = None
         # Per-call timeout override; None means use the client's configured timeout.

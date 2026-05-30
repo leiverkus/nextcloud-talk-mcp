@@ -12,12 +12,54 @@ Auth is via a Nextcloud **app password** (Basic Auth), which works even on SSO/S
 
 ## Tools
 
+### Chat
+
 | Tool | Kind | Description |
 |---|---|---|
 | `list_conversations()` | read | List all Talk conversations (rooms) the user is part of — `token`, `name`, `type`, `unread`, `lastMessage`. |
-| `read_messages(token, limit=30)` | read | Read the most recent messages in a conversation. |
-| `send_message(token, message, reply_to=None)` | **write** | Send a message to a conversation, optionally as a reply to a message id. |
+| `read_messages(token, limit=30)` | read | Read the most recent messages in a conversation. Each message includes an `attachments` list (shared files, with name/path/mimetype/size where available). |
+| `wait_for_messages(token, last_known_message_id, limit=100, timeout=30)` | read | Long-poll for NEW messages after a given message id; blocks up to `timeout` seconds (max 60). |
 | `list_mentions(token, limit=20)` | read | List users/rooms that can be `@`-mentioned in a conversation (autocomplete candidates). |
+| `send_message(token, message, reply_to=None)` | **write** | Send a message, optionally as a reply to a message id. |
+| `edit_message(token, message_id, message)` | **write** | Edit an existing message (needs `edit-messages` capability). |
+| `delete_message(token, message_id)` | **destructive** | Delete a message for ALL participants. Cannot be undone. |
+| `mark_as_read(token, last_read_message=None)` | **write** | Mark a conversation as read (optionally up to a message id). |
+| `mark_as_unread(token)` | **write** | Mark a conversation as unread. |
+| `share_file_to_conversation(token, path, caption=None)` | **write** | Share an existing Nextcloud file (WebDAV `path`) into a conversation. Does not upload — the file must already exist. |
+
+### Reactions
+
+| Tool | Kind | Description |
+|---|---|---|
+| `list_reactions(token, message_id, reaction=None)` | read | List reactions on a message, keyed by emoji. |
+| `add_reaction(token, message_id, reaction)` | **write** | Add an emoji reaction to a message. |
+| `remove_reaction(token, message_id, reaction)` | **write** | Remove your emoji reaction from a message. |
+
+### Reminders
+
+| Tool | Kind | Description |
+|---|---|---|
+| `get_reminder(token, message_id)` | read | Get the reminder set on a message (if any). |
+| `set_reminder(token, message_id, timestamp)` | **write** | Set a reminder; `timestamp` is the Unix time (seconds) it fires. |
+| `delete_reminder(token, message_id)` | **write** | Clear the reminder on a message. |
+
+### Conversation management
+
+| Tool | Kind | Description |
+|---|---|---|
+| `create_conversation(room_type, invite=None, room_name=None, source=None)` | **write** | Create a conversation. `room_type`: 1=one-to-one (set `invite`), 2=group, 3=public (set `room_name`). |
+| `rename_conversation(token, name)` | **write** | Rename a conversation (max 255 chars). |
+| `set_description(token, description)` | **write** | Set the conversation description (max 2000 chars). |
+| `delete_conversation(token)` | **destructive** | Permanently delete a conversation and its history for ALL participants. Cannot be undone. |
+
+### Participants
+
+| Tool | Kind | Description |
+|---|---|---|
+| `list_participants(token)` | read | List participants — `attendeeId` (key for the tools below), `actorId`, `displayName`, `participantType`, `permissions`. |
+| `add_participant(token, new_participant, source="users")` | **write** | Add a participant. `source`: users, groups, circles, emails, federated_users. |
+| `remove_participant(token, attendee_id)` | **destructive** | Remove a participant's access. |
+| `set_participant_permissions(token, attendee_id, mode="set", can_*=...)` | **write** | Set permissions via named boolean flags (`can_publish_audio`, `can_post_chat`, …). `mode`: set / add / remove. |
 
 `token` always comes from `list_conversations()`. Conversation `type` codes: **1** = one-to-one, **2** = group, **3** = public, **4** = changelog, **6** = "Note to self".
 

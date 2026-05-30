@@ -70,6 +70,20 @@ def test_get_timeout_override_passed_through(make_client):
     assert captured["ext"].get("read") == 90
 
 
+def test_app_override_targets_other_ocs_app(make_client):
+    client, rec = make_client(ocs_response(200, data={"id": 1}))
+    client.post("/api/v1/shares", data={"shareType": 10}, app="files_sharing")
+    url = str(rec.last.url)
+    assert "/ocs/v2.php/apps/files_sharing/api/v1/shares" in url
+    assert "spreed" not in url
+
+
+def test_default_app_is_spreed(make_client):
+    client, rec = make_client(ocs_response(200, data=[]))
+    client.get("/api/v4/room")
+    assert "/ocs/v2.php/apps/spreed/api/v4/room" in str(rec.last.url)
+
+
 # --- OCS error codes on HTTP 200 -----------------------------------------
 
 

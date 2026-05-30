@@ -2,10 +2,32 @@
 
 ## Unreleased
 
-Tool-Erweiterung (Sub-Runde A): **13 neue Tools** über vier Domänen, jedes mit
-Test abgesichert. Endpunkte gegen die Spreed-OCS-Doku verifiziert; API-Versionen
-variieren pro Domäne (Konversation/Teilnehmer: `api/v4`, Chat/Read-Marker: `api/v1`).
-Reactions, Reminder und Dateianhänge folgen in Sub-Runde B.
+Tool-Erweiterung in zwei Sub-Runden: **20 neue Tools** über sieben Domänen,
+jedes mit Test abgesichert. Endpunkte gegen die Spreed-OCS- bzw. OCS-Share-Doku
+verifiziert; API-Versionen variieren pro Domäne (Konversation/Teilnehmer:
+`api/v4`, Chat/Read-Marker/Reactions/Reminder: `api/v1`, Dateianhänge:
+`files_sharing api/v1`). Damit ist der volle Talk-Scope des Briefings abgedeckt.
+
+### Added — Sub-Runde B (Reactions, Reminder, Dateianhänge)
+
+- **Reactions** (`api/v1/reaction`, seit NC 24): `add_reaction`,
+  `remove_reaction`, `list_reactions` (nach Emoji gekeyt).
+- **Reminder** (`api/v1/chat/.../reminder`, Capability `remind-me-later`):
+  `set_reminder` (Unix-Timestamp), `get_reminder`, `delete_reminder`.
+- **Dateianhänge senden**: `share_file_to_conversation` teilt eine bereits im
+  WebDAV liegende Datei in den Raum (`POST files_sharing/api/v1/shares`,
+  `shareType=10`); optionale `caption` via `talkMetaData`. Lädt nichts hoch.
+- **Anhänge-Parsing**: `read_messages` (und `wait_for_messages`) liefern nun pro
+  Nachricht eine `attachments`-Liste — File-`richObject`s aus
+  `messageParameters` werden defensiv extrahiert (Name/Pfad/MIME/Größe, soweit
+  vorhanden).
+- **`OCSClient`**: optionaler `app`-Override auf `request()`/`post()`, damit
+  `share_file_to_conversation` den `files_sharing`-Endpunkt statt `spreed`
+  ansprechen kann — ohne zweiten Client, dieselbe Retry-/OCS-Parsing-Logik.
+- 14 weitere Tests (Reactions/Reminder/Share-Endpunkte, `app`-Override,
+  Anhänge-Parsing inkl. Teilfelder). Gesamt: 72 Tests, 95 % Coverage.
+
+### Added — Sub-Runde A (Konversation, Teilnehmer, Edit/Delete, Read-Marker, Long-Poll)
 
 ### Added
 
