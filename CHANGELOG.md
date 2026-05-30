@@ -24,8 +24,17 @@ verifiziert; API-Versionen variieren pro Domäne (Konversation/Teilnehmer:
 - **`OCSClient`**: optionaler `app`-Override auf `request()`/`post()`, damit
   `share_file_to_conversation` den `files_sharing`-Endpunkt statt `spreed`
   ansprechen kann — ohne zweiten Client, dieselbe Retry-/OCS-Parsing-Logik.
-- 14 weitere Tests (Reactions/Reminder/Share-Endpunkte, `app`-Override,
-  Anhänge-Parsing inkl. Teilfelder). Gesamt: 72 Tests, 95 % Coverage.
+- 15 weitere Tests (Reactions/Reminder/Share-Endpunkte, `app`-Override,
+  Anhänge-Parsing inkl. Teilfelder, OCS-201). Gesamt: 73 Tests, 95 % Coverage.
+
+### Fixed
+
+- **`OCSClient` akzeptiert den vollen 2xx-Erfolgsbereich.** Bisher galten nur
+  OCS-Statuscodes 100 und 200 als Erfolg; schreibende Endpunkte wie
+  `create_conversation`, `add_reaction` und `set_reminder` antworten mit
+  **201 (Created)** und lösten fälschlich einen `NextcloudOCSError` aus. Live
+  gegen `cloud.uol.de` aufgefallen. Erfolg ist jetzt `statuscode == 100` oder
+  `200 ≤ statuscode < 300`.
 
 ### Added — Sub-Runde A (Konversation, Teilnehmer, Edit/Delete, Read-Marker, Long-Poll)
 

@@ -29,6 +29,12 @@ def test_statuscode_100_is_success(make_client):
     assert client.get("/api/v4/room") == {"ok": True}
 
 
+def test_statuscode_201_created_is_success(make_client):
+    # create_conversation / add_reaction / set_reminder return OCS 201.
+    client, _ = make_client(ocs_response(201, data={"token": "t1"}))
+    assert client.post("/api/v4/room", data={"roomType": 2}) == {"token": "t1"}
+
+
 def test_request_sets_ocs_header(make_client):
     client, rec = make_client(ocs_response(200, data=[]))
     client.get("/api/v4/room")

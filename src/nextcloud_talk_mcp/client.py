@@ -141,7 +141,10 @@ class OCSClient:
         except (KeyError, TypeError, ValueError) as exc:
             raise NextcloudOCSError(resp.status_code, f"unexpected OCS envelope: {payload!r}") from exc
 
-        if statuscode in (100, 200):
+        # OCS mirrors HTTP status semantics: 100 (OCS v1 success) and the whole
+        # 2xx range are success — 201 Created is returned by create_conversation,
+        # add_reaction, set_reminder, etc.
+        if statuscode == 100 or 200 <= statuscode < 300:
             return ocs.get("data")
         if statuscode == 401:
             raise NextcloudAuthError(meta.get("message", "OCS authentication failed"))
