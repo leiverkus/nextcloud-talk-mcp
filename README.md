@@ -21,7 +21,7 @@ Auth is via a Nextcloud **app password** (Basic Auth), which works even on SSO/S
 
 `token` always comes from `list_conversations()`. Conversation `type` codes: **1** = one-to-one, **2** = group, **3** = public, **4** = changelog, **6** = "Note to self".
 
-> **Write tools require confirmation.** MCP clients prompt before running a tool, and `send_message` is deliberately marked as a write operation. That confirmation step is intentional — do not bypass it, especially on shared or institutional channels.
+> **Write and destructive tools require confirmation.** Write tools carry a `readOnlyHint: false` annotation; destructive ones (`delete_message`, `delete_conversation`, `remove_participant`) additionally carry `destructiveHint: true`, so MCP clients prompt before running them. That confirmation step is intentional — do not bypass it, especially on shared or institutional channels.
 
 ## Installation
 
