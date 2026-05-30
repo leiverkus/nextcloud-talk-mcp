@@ -156,6 +156,12 @@ Restart Claude Desktop; the four tools then appear under the `nextcloud-talk` se
 - **Keep secrets out of version control.** `.env` is gitignored; only `.env.example` (placeholders) is committed.
 - **Write tools prompt before running.** `send_message` is marked as a write operation so MCP clients ask for confirmation first. This is by design — leave it on.
 
+## Contributing
+
+Working on the server itself? See [AGENTS.md](AGENTS.md) for the conventions —
+OCS envelope handling, per-domain API versions, write/destructive annotations,
+the test fixture pattern, and the live-smoke discipline.
+
 ## License
 
 [MIT](LICENSE) © Patrick Leiverkus
