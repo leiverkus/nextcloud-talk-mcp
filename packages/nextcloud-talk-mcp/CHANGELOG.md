@@ -1,6 +1,9 @@
 # Changelog — nextcloud-talk-mcp
 
-## Unreleased
+## 1.0.0 — 2026-05-30
+
+First stable release: 24 tools covering the full Talk scope, built on
+`nextcloud-talk-core`. All tools verified live against a real instance.
 
 ### Changed
 

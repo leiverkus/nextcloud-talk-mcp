@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nextcloud-talk-mcp"
-version = "0.1.0"
+version = "1.0.0"
 description = "MCP server wrapping the Nextcloud Talk (Spreed) OCS API"
 readme = "README.md"
 requires-python = ">=3.10"
