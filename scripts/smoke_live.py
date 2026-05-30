@@ -12,6 +12,7 @@ Run it from the repo root (the module resolves from the installed package):
     export NC_APP_PASSWORD="xxxxx-xxxxx-xxxxx-xxxxx"   # app password, NOT login pw
     python scripts/smoke_live.py              # read-only checks (safe)
     python scripts/smoke_live.py --lifecycle  # also exercise write/new tools
+    python scripts/smoke_live.py --share-file /Documents/test.pdf  # + share & read back a file
 
 The default run is read-only: it lists conversations, reads messages, resolves
 mentions, and checks the two error paths. It changes nothing.
@@ -94,8 +95,11 @@ def read_only_checks(settings: Settings) -> None:
         bad_client.close()
 
 
-def lifecycle_checks() -> None:
-    """Create a throwaway room, exercise the new tools, then delete it."""
+def lifecycle_checks(share_file: str | None = None) -> None:
+    """Create a throwaway room, exercise the new tools, then delete it.
+
+    If `share_file` is given (a WebDAV path), also share that existing file
+    into the room and read it back to verify attachment parsing."""
     section("create_conversation(room_type=2, room_name='MCP smoke test')")
     room = server.create_conversation(room_type=2, room_name="MCP smoke test")
     token = room["token"]
@@ -157,6 +161,20 @@ def lifecycle_checks() -> None:
 
         section(f"delete_message({token!r}, {msg_id})  [destructive, own message]")
         print(f"  {server.delete_message(token, msg_id)}")
+
+        if share_file is not None:
+            section(f"share_file_to_conversation({token!r}, {share_file!r})")
+            shared = server.share_file_to_conversation(token, share_file, caption="smoke test attachment")
+            print(f"  {shared}")
+
+            section(f"read_messages({token!r}) → verify attachments parsed")
+            found = False
+            for m in server.read_messages(token, limit=10):
+                if m["attachments"]:
+                    found = True
+                    print(f"  #{m['id']} attachments: {m['attachments']}")
+            if not found:
+                print("  WARNING: no message with a parsed attachment found")
     finally:
         # Always clean up the throwaway room, even if a step above failed.
         section(f"delete_conversation({token!r})  [cleanup of throwaway room]")
@@ -166,8 +184,21 @@ def lifecycle_checks() -> None:
             print(f"  WARNING: cleanup failed, delete room {token!r} manually: {exc}")
 
 
+def _parse_share_file(argv: list[str]) -> str | None:
+    """Extract the value of --share-file PATH (implies --lifecycle)."""
+    for i, arg in enumerate(argv):
+        if arg == "--share-file" and i + 1 < len(argv):
+            return argv[i + 1]
+        if arg.startswith("--share-file="):
+            return arg.split("=", 1)[1]
+    return None
+
+
 def main() -> int:
-    lifecycle = "--lifecycle" in sys.argv[1:]
+    argv = sys.argv[1:]
+    share_file = _parse_share_file(argv)
+    # --share-file implies the lifecycle run (it shares into the throwaway room).
+    lifecycle = "--lifecycle" in argv or share_file is not None
 
     try:
         settings = Settings.from_env()
@@ -177,11 +208,13 @@ def main() -> int:
 
     print(f"Target: {settings.nc_url}  (user: {settings.nc_user})")
     print(f"Mode: {'lifecycle (creates + deletes a throwaway room)' if lifecycle else 'read-only'}")
+    if share_file is not None:
+        print(f"Share file: {share_file}")
     server._client = OCSClient(settings)
 
     read_only_checks(settings)
     if lifecycle:
-        lifecycle_checks()
+        lifecycle_checks(share_file=share_file)
 
     section("DONE — all live checks ran")
     return 0
