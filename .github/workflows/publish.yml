@@ -1,0 +1,40 @@
+name: Publish
+
+# Builds the nextcloud-talk-mcp distribution and uploads it to PyPI.
+#
+# NOT YET ARMED: triggered manually via workflow_dispatch only. To go live,
+# switch the trigger to `release: types: [published]` and register the trusted
+# publisher once on PyPI (project nextcloud-talk-mcp, this repo, workflow
+# publish.yml, environment pypi). Uses PyPI Trusted Publishing (OIDC) — no API
+# token is stored.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
