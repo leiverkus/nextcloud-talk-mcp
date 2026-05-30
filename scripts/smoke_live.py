@@ -48,7 +48,9 @@ def read_only_checks(settings: Settings) -> None:
     rooms = server.list_conversations()
     print(f"{len(rooms)} room(s)")
     for r in rooms[:10]:
-        print(f"  - [{r['type']}] {r['name']!r:40} token={r['token']:8} unread={r['unread']}")
+        print(
+            f"  - [{r['type']}] {r['name']!r:40} token={r['token']:8} unread={r['unread']}"
+        )
     if not rooms:
         print("  (no rooms — skipping message checks)")
     else:
@@ -110,7 +112,9 @@ def lifecycle_checks(share_file: str | None = None) -> None:
         print(f"  {server.rename_conversation(token, 'MCP smoke test (renamed)')}")
 
         section(f"set_description({token!r}, ...)")
-        print(f"  {server.set_description(token, 'Created by scripts/smoke_live.py — safe to delete.')}")
+        print(
+            f"  {server.set_description(token, 'Created by scripts/smoke_live.py — safe to delete.')}"
+        )
 
         section(f"list_participants({token!r})")
         parts = server.list_participants(token)
@@ -155,7 +159,9 @@ def lifecycle_checks(share_file: str | None = None) -> None:
         section(f"mark_as_unread({token!r})")
         print(f"  {server.mark_as_unread(token)}")
 
-        section(f"wait_for_messages({token!r}, last_known_message_id={msg_id}, timeout=3)")
+        section(
+            f"wait_for_messages({token!r}, last_known_message_id={msg_id}, timeout=3)"
+        )
         new = server.wait_for_messages(token, last_known_message_id=msg_id, timeout=3)
         print(f"  returned {len(new)} message(s) after long-poll")
 
@@ -164,7 +170,9 @@ def lifecycle_checks(share_file: str | None = None) -> None:
 
         if share_file is not None:
             section(f"share_file_to_conversation({token!r}, {share_file!r})")
-            shared = server.share_file_to_conversation(token, share_file, caption="smoke test attachment")
+            shared = server.share_file_to_conversation(
+                token, share_file, caption="smoke test attachment"
+            )
             print(f"  {shared}")
 
             section(f"read_messages({token!r}) → verify attachments parsed")
@@ -207,7 +215,9 @@ def main() -> int:
         return 2
 
     print(f"Target: {settings.nc_url}  (user: {settings.nc_user})")
-    print(f"Mode: {'lifecycle (creates + deletes a throwaway room)' if lifecycle else 'read-only'}")
+    print(
+        f"Mode: {'lifecycle (creates + deletes a throwaway room)' if lifecycle else 'read-only'}"
+    )
     if share_file is not None:
         print(f"Share file: {share_file}")
     server._client = OCSClient(settings)

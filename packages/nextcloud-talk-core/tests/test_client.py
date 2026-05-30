@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from nextcloud_talk_mcp.errors import (
+from nextcloud_talk_core.errors import (
     NextcloudAuthError,
     NextcloudNotFoundError,
     NextcloudOCSError,

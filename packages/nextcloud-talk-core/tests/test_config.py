@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from nextcloud_talk_mcp.config import Settings
-from nextcloud_talk_mcp.errors import NextcloudConfigError
+from nextcloud_talk_core.config import Settings
+from nextcloud_talk_core.errors import NextcloudConfigError
 
 _VARS = ("NC_URL", "NC_USER", "NC_APP_PASSWORD")
 
