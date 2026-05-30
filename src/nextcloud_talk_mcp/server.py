@@ -12,6 +12,8 @@ are intentional and must not be bypassed.
 
 from __future__ import annotations
 
+import json
+
 from fastmcp import FastMCP
 
 from nextcloud_talk_mcp.client import OCSClient
@@ -42,6 +44,20 @@ def _get_client() -> OCSClient:
     return _client
 
 
+def _extract_attachments(m: dict) -> list[dict]:
+    """Pull file rich-objects out of a message's messageParameters.
+
+    Defensive: the Talk docs don't fully specify the messageParameters shape,
+    so every field is read with .get() and missing ones are dropped."""
+    attachments = []
+    for param in (m.get("messageParameters") or {}).values():
+        if not isinstance(param, dict) or param.get("type") != "file":
+            continue
+        att = {key: param[key] for key in ("name", "path", "mimetype", "size", "id", "link") if key in param}
+        attachments.append(att)
+    return attachments
+
+
 def _format_message(m: dict) -> dict:
     """Shared message-shaping used by read_messages and wait_for_messages."""
     return {
@@ -49,6 +65,7 @@ def _format_message(m: dict) -> dict:
         "actor": m.get("actorDisplayName", m.get("actorId", "")),
         "timestamp": m["timestamp"],
         "message": m["message"],
+        "attachments": _extract_attachments(m),
     }
 
 
@@ -305,6 +322,102 @@ def set_participant_permissions(
         data={"attendeeId": attendee_id, "method": mode, "permissions": permissions},
     )
     return {"token": token, "attendeeId": attendee_id, "mode": mode, "permissions": permissions}
+
+
+# --- reactions (api/v1, since Nextcloud 24) --------------------------------
+
+
+def _format_reactions(data: dict | None) -> dict:
+    """Map the emoji-keyed reaction response to {emoji: [actor, ...]}."""
+    result: dict = {}
+    for emoji, entries in (data or {}).items():
+        result[emoji] = [
+            {
+                "actorId": e.get("actorId", ""),
+                "actorDisplayName": e.get("actorDisplayName", ""),
+                "timestamp": e.get("timestamp"),
+            }
+            for e in entries
+        ]
+    return result
+
+
+@mcp.tool()
+def add_reaction(token: str, message_id: int, reaction: str) -> dict:
+    """Add an emoji reaction to a message. WRITE operation.
+    `reaction` is a single emoji, e.g. "👍". Requires the `reactions` capability."""
+    data = _get_client().post(
+        f"/api/v1/reaction/{token}/{message_id}",
+        data={"reaction": reaction},
+    )
+    return {"messageId": message_id, "reaction": reaction, "reactions": _format_reactions(data)}
+
+
+@mcp.tool()
+def remove_reaction(token: str, message_id: int, reaction: str) -> dict:
+    """Remove your emoji reaction from a message. WRITE operation.
+    `reaction` is the emoji to remove, e.g. "👍"."""
+    data = _get_client().delete(
+        f"/api/v1/reaction/{token}/{message_id}",
+        data={"reaction": reaction},
+    )
+    return {"messageId": message_id, "removed": reaction, "reactions": _format_reactions(data)}
+
+
+@mcp.tool(annotations={"readOnlyHint": True})
+def list_reactions(token: str, message_id: int, reaction: str | None = None) -> dict:
+    """List reactions on a message, keyed by emoji.
+    `reaction` optionally filters to a single emoji."""
+    params = {"reaction": reaction} if reaction is not None else None
+    data = _get_client().get(f"/api/v1/reaction/{token}/{message_id}", params=params)
+    return _format_reactions(data)
+
+
+# --- reminders (api/v1, capability remind-me-later) ------------------------
+
+
+@mcp.tool()
+def set_reminder(token: str, message_id: int, timestamp: int) -> dict:
+    """Set a reminder on a message. WRITE operation.
+    `timestamp` is the Unix time (seconds) when the reminder fires.
+    Requires the `remind-me-later` capability."""
+    _get_client().post(
+        f"/api/v1/chat/{token}/{message_id}/reminder",
+        data={"timestamp": timestamp},
+    )
+    return {"messageId": message_id, "remindAt": timestamp}
+
+
+@mcp.tool(annotations={"readOnlyHint": True})
+def get_reminder(token: str, message_id: int) -> dict:
+    """Get the reminder set on a message (if any)."""
+    data = _get_client().get(f"/api/v1/chat/{token}/{message_id}/reminder")
+    return {"messageId": message_id, "remindAt": (data or {}).get("timestamp")}
+
+
+@mcp.tool()
+def delete_reminder(token: str, message_id: int) -> dict:
+    """Delete the reminder on a message. WRITE operation."""
+    _get_client().delete(f"/api/v1/chat/{token}/{message_id}/reminder")
+    return {"messageId": message_id, "reminderCleared": True}
+
+
+# --- file attachments (files_sharing api/v1) -------------------------------
+
+
+@mcp.tool()
+def share_file_to_conversation(token: str, path: str, caption: str | None = None) -> dict:
+    """Share an EXISTING Nextcloud file into a conversation. WRITE operation.
+
+    `path` is the file's WebDAV path relative to your user root, e.g.
+    "/Documents/report.pdf". The file must already exist in your Nextcloud —
+    this tool does NOT upload; it only shares. `caption` is an optional message
+    shown with the attachment."""
+    payload: dict = {"shareType": 10, "shareWith": token, "path": path}
+    if caption is not None:
+        payload["talkMetaData"] = json.dumps({"caption": caption})
+    data = _get_client().post("/api/v1/shares", data=payload, app="files_sharing")
+    return {"shareId": (data or {}).get("id"), "token": token, "path": path}
 
 
 def main() -> None:

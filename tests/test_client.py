@@ -29,6 +29,12 @@ def test_statuscode_100_is_success(make_client):
     assert client.get("/api/v4/room") == {"ok": True}
 
 
+def test_statuscode_201_created_is_success(make_client):
+    # create_conversation / add_reaction / set_reminder return OCS 201.
+    client, _ = make_client(ocs_response(201, data={"token": "t1"}))
+    assert client.post("/api/v4/room", data={"roomType": 2}) == {"token": "t1"}
+
+
 def test_request_sets_ocs_header(make_client):
     client, rec = make_client(ocs_response(200, data=[]))
     client.get("/api/v4/room")
@@ -68,6 +74,20 @@ def test_get_timeout_override_passed_through(make_client):
     # httpx records the per-request timeout in the request extensions.
     assert captured["ext"] is not None
     assert captured["ext"].get("read") == 90
+
+
+def test_app_override_targets_other_ocs_app(make_client):
+    client, rec = make_client(ocs_response(200, data={"id": 1}))
+    client.post("/api/v1/shares", data={"shareType": 10}, app="files_sharing")
+    url = str(rec.last.url)
+    assert "/ocs/v2.php/apps/files_sharing/api/v1/shares" in url
+    assert "spreed" not in url
+
+
+def test_default_app_is_spreed(make_client):
+    client, rec = make_client(ocs_response(200, data=[]))
+    client.get("/api/v4/room")
+    assert "/ocs/v2.php/apps/spreed/api/v4/room" in str(rec.last.url)
 
 
 # --- OCS error codes on HTTP 200 -----------------------------------------

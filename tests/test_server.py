@@ -75,7 +75,7 @@ def test_read_messages_schema_and_params(wired):
         )
     )
     result = server.read_messages("tok1", limit=5)
-    assert result == [{"id": 1, "actor": "Alice", "timestamp": 1000, "message": "hi"}]
+    assert result == [{"id": 1, "actor": "Alice", "timestamp": 1000, "message": "hi", "attachments": []}]
     url = str(rec.last.url)
     assert "/api/v1/chat/tok1" in url
     assert "lookIntoFuture=0" in url
@@ -140,7 +140,7 @@ def test_list_mentions_schema(wired):
 def test_wait_for_messages_params(wired):
     rec = wired(ocs_response(200, data=[{"id": 7, "actorDisplayName": "Al", "timestamp": 9, "message": "new"}]))
     result = server.wait_for_messages("tok1", last_known_message_id=5, limit=50, timeout=10)
-    assert result == [{"id": 7, "actor": "Al", "timestamp": 9, "message": "new"}]
+    assert result == [{"id": 7, "actor": "Al", "timestamp": 9, "message": "new", "attachments": []}]
     url = str(rec.last.url)
     assert "/api/v1/chat/tok1" in url
     assert "lookIntoFuture=1" in url
@@ -339,3 +339,180 @@ def test_set_participant_permissions_mode_remove(wired):
     rec = wired(ocs_response(200, data={}))
     server.set_participant_permissions("tok1", 11, mode="remove", can_start_call=True)
     assert b"method=remove" in rec.last.content
+
+
+# --- attachment parsing in read_messages ----------------------------------
+
+
+def test_read_messages_extracts_file_attachment(wired):
+    wired(
+        ocs_response(
+            200,
+            data=[
+                {
+                    "id": 3,
+                    "actorDisplayName": "Al",
+                    "timestamp": 5,
+                    "message": "{file}",
+                    "messageParameters": {
+                        "file": {
+                            "type": "file",
+                            "id": "123",
+                            "name": "report.pdf",
+                            "path": "/Documents/report.pdf",
+                            "mimetype": "application/pdf",
+                            "size": 2048,
+                            "link": "https://nc.example/f/123",
+                        }
+                    },
+                }
+            ],
+        )
+    )
+    msg = server.read_messages("tok1")[0]
+    assert msg["attachments"] == [
+        {
+            "name": "report.pdf",
+            "path": "/Documents/report.pdf",
+            "mimetype": "application/pdf",
+            "size": 2048,
+            "id": "123",
+            "link": "https://nc.example/f/123",
+        }
+    ]
+
+
+def test_read_messages_ignores_non_file_params(wired):
+    wired(
+        ocs_response(
+            200,
+            data=[
+                {
+                    "id": 4,
+                    "actorDisplayName": "Al",
+                    "timestamp": 6,
+                    "message": "hi {user}",
+                    "messageParameters": {"user": {"type": "user", "id": "bob", "name": "Bob"}},
+                }
+            ],
+        )
+    )
+    assert server.read_messages("tok1")[0]["attachments"] == []
+
+
+def test_read_messages_partial_file_fields(wired):
+    wired(
+        ocs_response(
+            200,
+            data=[
+                {
+                    "id": 5,
+                    "actorDisplayName": "Al",
+                    "timestamp": 7,
+                    "message": "{file}",
+                    "messageParameters": {"file": {"type": "file", "name": "note.txt"}},
+                }
+            ],
+        )
+    )
+    assert server.read_messages("tok1")[0]["attachments"] == [{"name": "note.txt"}]
+
+
+# --- reactions -------------------------------------------------------------
+
+
+def test_add_reaction_posts_emoji(wired):
+    rec = wired(ocs_response(200, data={"👍": [{"actorId": "al", "actorDisplayName": "Al", "timestamp": 9}]}))
+    result = server.add_reaction("tok1", 42, "👍")
+    assert result["messageId"] == 42
+    assert result["reaction"] == "👍"
+    assert result["reactions"] == {"👍": [{"actorId": "al", "actorDisplayName": "Al", "timestamp": 9}]}
+    assert rec.last.method == "POST"
+    assert "/api/v1/reaction/tok1/42" in str(rec.last.url)
+    assert "reaction=" in rec.last.content.decode()
+
+
+def test_remove_reaction_uses_delete(wired):
+    rec = wired(ocs_response(200, data={}))
+    result = server.remove_reaction("tok1", 42, "👍")
+    assert result["removed"] == "👍"
+    assert rec.last.method == "DELETE"
+    assert "/api/v1/reaction/tok1/42" in str(rec.last.url)
+    assert "reaction=" in rec.last.content.decode()
+
+
+def test_list_reactions_maps_by_emoji(wired):
+    rec = wired(
+        ocs_response(
+            200,
+            data={
+                "👍": [{"actorId": "al", "actorDisplayName": "Al", "timestamp": 9}],
+                "🎉": [{"actorId": "bo", "actorDisplayName": "Bo", "timestamp": 10}],
+            },
+        )
+    )
+    result = server.list_reactions("tok1", 42)
+    assert result == {
+        "👍": [{"actorId": "al", "actorDisplayName": "Al", "timestamp": 9}],
+        "🎉": [{"actorId": "bo", "actorDisplayName": "Bo", "timestamp": 10}],
+    }
+    assert rec.last.method == "GET"
+    assert "/api/v1/reaction/tok1/42" in str(rec.last.url)
+
+
+def test_list_reactions_with_filter(wired):
+    rec = wired(ocs_response(200, data={"👍": []}))
+    server.list_reactions("tok1", 42, reaction="👍")
+    assert "reaction=" in str(rec.last.url)
+
+
+# --- reminders -------------------------------------------------------------
+
+
+def test_set_reminder_posts_timestamp(wired):
+    rec = wired(ocs_response(200, data={}))
+    result = server.set_reminder("tok1", 42, 1893456000)
+    assert result == {"messageId": 42, "remindAt": 1893456000}
+    assert rec.last.method == "POST"
+    assert "/api/v1/chat/tok1/42/reminder" in str(rec.last.url)
+    assert b"timestamp=1893456000" in rec.last.content
+
+
+def test_get_reminder_returns_timestamp(wired):
+    rec = wired(ocs_response(200, data={"timestamp": 1893456000}))
+    result = server.get_reminder("tok1", 42)
+    assert result == {"messageId": 42, "remindAt": 1893456000}
+    assert rec.last.method == "GET"
+    assert "/api/v1/chat/tok1/42/reminder" in str(rec.last.url)
+
+
+def test_delete_reminder_uses_delete(wired):
+    rec = wired(ocs_response(200, data={}))
+    result = server.delete_reminder("tok1", 42)
+    assert result == {"messageId": 42, "reminderCleared": True}
+    assert rec.last.method == "DELETE"
+    assert "/api/v1/chat/tok1/42/reminder" in str(rec.last.url)
+
+
+# --- file attachment sharing -----------------------------------------------
+
+
+def test_share_file_uses_files_sharing_endpoint(wired):
+    rec = wired(ocs_response(200, data={"id": 77}))
+    result = server.share_file_to_conversation("tok1", "/Documents/report.pdf")
+    assert result == {"shareId": 77, "token": "tok1", "path": "/Documents/report.pdf"}
+    assert rec.last.method == "POST"
+    # Crucially: the files_sharing app path, NOT spreed.
+    assert "/ocs/v2.php/apps/files_sharing/api/v1/shares" in str(rec.last.url)
+    assert "spreed" not in str(rec.last.url)
+    body = rec.last.content.decode()
+    assert "shareType=10" in body
+    assert "shareWith=tok1" in body
+
+
+def test_share_file_with_caption_sets_talk_metadata(wired):
+    rec = wired(ocs_response(200, data={"id": 78}))
+    server.share_file_to_conversation("tok1", "/foo.txt", caption="see attached")
+    body = rec.last.content.decode()
+    assert "talkMetaData" in body
+    assert "caption" in body
