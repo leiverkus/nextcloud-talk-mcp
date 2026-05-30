@@ -2,11 +2,22 @@
 
 [![CI](https://github.com/leiverkus/nextcloud-talk-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/leiverkus/nextcloud-talk-mcp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10%E2%80%933.13-blue.svg)](pyproject.toml)
+[![Python](https://img.shields.io/badge/python-3.10%E2%80%933.13-blue.svg)](packages/nextcloud-talk-mcp/pyproject.toml)
 
 **An MCP server for Nextcloud Talk (Spreed) — list conversations, read and send messages, and resolve @-mentions straight from your agent.**
 
 The established Nextcloud MCP servers ([cbcoutinho](https://github.com/cbcoutinho/nextcloud-mcp-server), [No-Smoke](https://github.com/No-Smoke/nextcloud-mcp), [hithereiamaliff](https://github.com/hithereiamaliff/nextcloud-mcp)) cover Notes, Calendar, Contacts, Tables, and WebDAV — **but not Talk**. This project fills that gap: it wraps the Talk/Spreed OCS API as MCP tools, primarily for use with Claude Desktop on macOS.
+
+## Repository layout
+
+This is a monorepo with two packages under `packages/`:
+
+| Package | What it is |
+|---|---|
+| [`nextcloud-talk-core`](packages/nextcloud-talk-core) | The reusable, **MCP-free** OCS client: `TalkClient`, typed models, `OCSClient`, config, errors. Installable on its own via a Git tag — other projects (e.g. a polling bridge) depend on it directly. |
+| [`nextcloud-talk-mcp`](packages/nextcloud-talk-mcp) | The MCP server — a thin wrapper that exposes `TalkClient` as MCP tools. |
+
+The MCP server is the focus of this README; for embedding the client in your own Python code, see [`nextcloud-talk-core`](packages/nextcloud-talk-core) and the snippet under [Using the core directly](#using-the-core-directly).
 
 Auth is via a Nextcloud **app password** (Basic Auth), which works even on SSO/SAML instances with two-factor authentication — the app password bypasses the identity provider server-side, so no interactive login or second factor is needed for API access.
 
@@ -67,27 +78,31 @@ Auth is via a Nextcloud **app password** (Basic Auth), which works even on SSO/S
 
 ## Installation
 
-Requires **Python ≥ 3.10**.
-
-### uvx (no install)
-
-```bash
-uvx nextcloud-talk-mcp
-```
-
-### pipx
-
-```bash
-pipx install nextcloud-talk-mcp
-```
-
-### From source
+Requires **Python ≥ 3.10**. The MCP server depends on the core package; install both from source:
 
 ```bash
 git clone https://github.com/leiverkus/nextcloud-talk-mcp.git
 cd nextcloud-talk-mcp
 python3 -m venv .venv && source .venv/bin/activate
-pip install -e .
+pip install -e packages/nextcloud-talk-core -e packages/nextcloud-talk-mcp
+```
+
+This installs the `nextcloud-talk-mcp` entry point. (Neither package is published to PyPI; `uvx`/`pipx` are therefore not available yet.)
+
+### Using the core directly
+
+To embed the Talk client in your own Python project (no MCP), depend on just the core package via a Git tag:
+
+```bash
+pip install "git+https://github.com/leiverkus/nextcloud-talk-mcp.git@core-v0.1.0#subdirectory=packages/nextcloud-talk-core"
+```
+
+```python
+from nextcloud_talk_core import TalkClient
+
+with TalkClient.from_env() as talk:           # reads NC_URL / NC_USER / NC_APP_PASSWORD
+    for c in talk.list_conversations():
+        print(c.token, c.name, c.unread)
 ```
 
 ## Configuration
@@ -112,25 +127,7 @@ See [`.env.example`](.env.example) for a template. Missing or malformed variable
 
 ## Claude Desktop
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
-
-```json
-{
-  "mcpServers": {
-    "nextcloud-talk": {
-      "command": "uvx",
-      "args": ["nextcloud-talk-mcp"],
-      "env": {
-        "NC_URL": "https://cloud.example.com",
-        "NC_USER": "your-username",
-        "NC_APP_PASSWORD": "xxxxx-xxxxx-xxxxx-xxxxx"
-      }
-    }
-  }
-}
-```
-
-If you installed from source into a virtualenv, point `command` at that interpreter instead:
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS). Point `command` at the virtualenv interpreter from the install above:
 
 ```json
 {
@@ -148,7 +145,7 @@ If you installed from source into a virtualenv, point `command` at that interpre
 }
 ```
 
-Restart Claude Desktop; the four tools then appear under the `nextcloud-talk` server.
+Restart Claude Desktop; the tools then appear under the `nextcloud-talk` server.
 
 ## Security
 

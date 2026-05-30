@@ -29,5 +29,26 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - run: pip install -e ".[dev]"
-      - run: pytest --cov=nextcloud_talk_mcp --cov-report=term-missing
+      - run: pip install -e packages/nextcloud-talk-core -e packages/nextcloud-talk-mcp
+      - run: pip install pytest pytest-cov
+      # Packages are tested separately: both have a top-level `tests` package,
+      # so a single pytest invocation can't import both.
+      - name: Test core
+        run: pytest packages/nextcloud-talk-core/tests --cov=nextcloud_talk_core --cov-report=term-missing
+      - name: Test mcp
+        run: pytest packages/nextcloud-talk-mcp/tests --cov=nextcloud_talk_mcp --cov-report=term-missing
+
+  git-install-verify:
+    # Verifies the real Git-install path the bridge repo relies on:
+    # `pip install "git+...#subdirectory=packages/nextcloud-talk-core"`.
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/setup-python@v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Install core from this commit via Git URL
+        run: |
+          pip install "git+${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git@${GITHUB_SHA}#subdirectory=packages/nextcloud-talk-core"
+      - name: Import the public API
+        run: python -c "from nextcloud_talk_core import TalkClient, Settings, Conversation, Message; print('core git-install OK')"

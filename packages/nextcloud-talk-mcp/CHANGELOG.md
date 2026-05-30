@@ -1,6 +1,19 @@
-# Changelog
+# Changelog — nextcloud-talk-mcp
 
 ## Unreleased
+
+### Changed
+
+- **Refactored onto `nextcloud-talk-core`.** The OCS/HTTP layer, the typed
+  models, config, errors, and the permission-bitmask helper now live in the
+  separate, MCP-free `nextcloud-talk-core` package (installable via Git tag).
+  The MCP tools became thin wrappers over `TalkClient` that serialise its typed
+  models to the unchanged camelCase MCP output. Tool names, signatures,
+  docstrings, annotations, and output schema are **unchanged** — purely an
+  internal restructure into a monorepo (`packages/`). Tests split per package
+  (core: httpx mocks; mcp: mocked `TalkClient`).
+
+---
 
 Tool-Erweiterung in zwei Sub-Runden: **20 neue Tools** über sieben Domänen,
 jedes mit Test abgesichert. Endpunkte gegen die Spreed-OCS- bzw. OCS-Share-Doku

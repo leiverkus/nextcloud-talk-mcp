@@ -20,7 +20,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install build
-      - run: python -m build
+      # Build the MCP server package (the core is distributed via Git tag, not PyPI).
+      - run: python -m build packages/nextcloud-talk-mcp --outdir dist
       - uses: actions/upload-artifact@v4
         with:
           name: dist

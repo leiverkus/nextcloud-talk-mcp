@@ -7,8 +7,9 @@ from collections.abc import Callable
 import httpx
 import pytest
 
-from nextcloud_talk_mcp.client import OCSClient
-from nextcloud_talk_mcp.config import Settings
+from nextcloud_talk_core.client import OCSClient
+from nextcloud_talk_core.config import Settings
+from nextcloud_talk_core.talk import TalkClient
 
 SETTINGS = Settings(nc_url="https://nc.example", nc_user="alice", nc_app_password="app-pw")
 
@@ -40,7 +41,7 @@ def make_client(monkeypatch):
     callable(request) -> httpx.Response. Returns (client, recorder).
     """
     # Never actually sleep during retry tests.
-    monkeypatch.setattr("nextcloud_talk_mcp.client.time.sleep", lambda *_: None)
+    monkeypatch.setattr("nextcloud_talk_core.client.time.sleep", lambda *_: None)
 
     created: list[OCSClient] = []
 
@@ -75,3 +76,19 @@ def make_client(monkeypatch):
 
     for c in created:
         c.close()
+
+
+@pytest.fixture
+def make_talk(make_client):
+    """Factory: build a TalkClient whose underlying OCSClient is mock-backed.
+
+    Returns (talk, recorder); `handler` is the same as for make_client.
+    """
+
+    def _factory(handler, **kwargs) -> tuple[TalkClient, Recorder]:
+        client, recorder = make_client(handler, **kwargs)
+        talk = TalkClient.__new__(TalkClient)
+        talk._ocs = client
+        return talk, recorder
+
+    return _factory

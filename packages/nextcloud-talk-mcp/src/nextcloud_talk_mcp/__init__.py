@@ -1,6 +1,8 @@
-"""Nextcloud Talk MCP server — Spreed OCS API wrapper."""
+"""Nextcloud Talk MCP server — thin wrapper over nextcloud-talk-core."""
 
-from nextcloud_talk_mcp.errors import (
+# Re-export the core exception hierarchy for convenience; the canonical
+# definitions live in nextcloud_talk_core.errors.
+from nextcloud_talk_core import (
     NextcloudAuthError,
     NextcloudConfigError,
     NextcloudNotFoundError,

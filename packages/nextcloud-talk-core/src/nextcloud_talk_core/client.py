@@ -8,9 +8,9 @@ from typing import Any
 
 import httpx
 
-from nextcloud_talk_mcp import __version__
-from nextcloud_talk_mcp.config import Settings
-from nextcloud_talk_mcp.errors import (
+from nextcloud_talk_core import __version__
+from nextcloud_talk_core.config import Settings
+from nextcloud_talk_core.errors import (
     NextcloudAuthError,
     NextcloudNotFoundError,
     NextcloudOCSError,

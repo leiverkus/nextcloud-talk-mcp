@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-from nextcloud_talk_mcp.errors import NextcloudConfigError
+from nextcloud_talk_core.errors import NextcloudConfigError
 
 
 @dataclass(frozen=True)
