@@ -4,7 +4,12 @@ Versioned via Git tags (`core-vX.Y.Z`); SemVer. The public API is `TalkClient`,
 `OCSClient`, `Settings`, the models, the errors, and `permissions_from_flags`.
 Breaking changes to that surface require a major bump.
 
-## core-v0.1.0 (unreleased)
+## core-v1.0.0 — 2026-05-30
+
+First stable release. The public API (`TalkClient`, the models, `OCSClient`,
+`Settings`, the errors, `permissions_from_flags`) is now a SemVer contract:
+breaking changes require a major bump. Consumers (e.g. the polling bridge) can
+pin to the `core-v1.0.0` Git tag.
 
 Initial extraction from the `nextcloud-talk-mcp` server into a reusable,
 **MCP-free** package, so other consumers (a Talk→OpenCode polling bridge, and
