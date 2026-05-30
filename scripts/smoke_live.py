@@ -2,18 +2,25 @@
 """Manual live smoke test against a real Nextcloud Talk instance.
 
 NOT part of the test suite — this makes real network calls and is meant to be
-run by hand once, to confirm the package works end-to-end against the actual
-instance. Throwaway helper; safe to delete before committing.
+run by hand to confirm the package works end-to-end against the actual instance.
 
-Run it from this subdirectory location (NOT the repo root) so the leftover
-prototype `nextcloud_talk_mcp.py` in the repo root does not shadow the
-installed package:
+Run it from the repo root (the module resolves from the installed package):
 
     source .venv/bin/activate
-    export NC_URL="https://cloud.uni-oldenburg.de"
+    export NC_URL="https://cloud.example.com"
     export NC_USER="your-username"
     export NC_APP_PASSWORD="xxxxx-xxxxx-xxxxx-xxxxx"   # app password, NOT login pw
-    python scripts/smoke_live.py
+    python scripts/smoke_live.py              # read-only checks (safe)
+    python scripts/smoke_live.py --lifecycle  # also exercise write/new tools
+
+The default run is read-only: it lists conversations, reads messages, resolves
+mentions, and checks the two error paths. It changes nothing.
+
+With --lifecycle it additionally creates a THROWAWAY group conversation, runs
+the write and management tools (rename, set_description, participants,
+read-markers, long-poll, edit/delete message) against THAT room only, and
+deletes it again at the end. Destructive tools are never pointed at your real
+conversations.
 """
 
 from __future__ import annotations
@@ -34,16 +41,7 @@ def section(title: str) -> None:
     print(f"\n=== {title} ===")
 
 
-def main() -> int:
-    try:
-        settings = Settings.from_env()
-    except NextcloudConfigError as exc:
-        print(f"[config] {exc}")
-        return 2
-
-    print(f"Target: {settings.nc_url}  (user: {settings.nc_user})")
-    server._client = OCSClient(settings)
-
+def read_only_checks(settings: Settings) -> None:
     # 1. list_conversations
     section("list_conversations()")
     rooms = server.list_conversations()
@@ -51,28 +49,27 @@ def main() -> int:
     for r in rooms[:10]:
         print(f"  - [{r['type']}] {r['name']!r:40} token={r['token']:8} unread={r['unread']}")
     if not rooms:
-        print("  (no rooms — cannot continue message checks)")
-        return 0
+        print("  (no rooms — skipping message checks)")
+    else:
+        token = rooms[0]["token"]
 
-    token = rooms[0]["token"]
+        # 2. read_messages
+        section(f"read_messages({token!r}, limit=5)")
+        msgs = server.read_messages(token, limit=5)
+        print(f"{len(msgs)} message(s)")
+        for m in msgs[-5:]:
+            text = (m["message"] or "").replace("\n", " ")[:60]
+            print(f"  - #{m['id']} {m['actor']!r}: {text!r}")
 
-    # 2. read_messages
-    section(f"read_messages({token!r}, limit=5)")
-    msgs = server.read_messages(token, limit=5)
-    print(f"{len(msgs)} message(s)")
-    for m in msgs[-5:]:
-        text = (m["message"] or "").replace("\n", " ")[:60]
-        print(f"  - #{m['id']} {m['actor']!r}: {text!r}")
-
-    # 3. list_mentions
-    section(f"list_mentions({token!r}, limit=5)")
-    try:
-        mentions = server.list_mentions(token, limit=5)
-        print(f"{len(mentions)} candidate(s)")
-        for mn in mentions[:5]:
-            print(f"  - {mn['source']}/{mn['id']}: {mn['label']!r}")
-    except Exception as exc:  # noqa: BLE001 — mentions can 4xx on some room types
-        print(f"  (skipped: {type(exc).__name__}: {exc})")
+        # 3. list_mentions
+        section(f"list_mentions({token!r}, limit=5)")
+        try:
+            mentions = server.list_mentions(token, limit=5)
+            print(f"{len(mentions)} candidate(s)")
+            for mn in mentions[:5]:
+                print(f"  - {mn['source']}/{mn['id']}: {mn['label']!r}")
+        except Exception as exc:  # noqa: BLE001 — mentions can 4xx on some room types
+            print(f"  (skipped: {type(exc).__name__}: {exc})")
 
     # 4. Error path: bogus token → NextcloudNotFoundError
     section("read_messages('definitely-not-a-real-token') → expect NotFound")
@@ -95,6 +92,74 @@ def main() -> int:
         print(f"  OK NextcloudAuthError: {exc}")
     finally:
         bad_client.close()
+
+
+def lifecycle_checks() -> None:
+    """Create a throwaway room, exercise the new tools, then delete it."""
+    section("create_conversation(room_type=2, room_name='MCP smoke test')")
+    room = server.create_conversation(room_type=2, room_name="MCP smoke test")
+    token = room["token"]
+    print(f"  created token={token} name={room['name']!r} type={room['type']}")
+
+    try:
+        section(f"rename_conversation({token!r}, 'MCP smoke test (renamed)')")
+        print(f"  {server.rename_conversation(token, 'MCP smoke test (renamed)')}")
+
+        section(f"set_description({token!r}, ...)")
+        print(f"  {server.set_description(token, 'Created by scripts/smoke_live.py — safe to delete.')}")
+
+        section(f"list_participants({token!r})")
+        parts = server.list_participants(token)
+        for p in parts:
+            print(
+                f"  - attendeeId={p['attendeeId']} {p['actorId']!r} type={p['participantType']} perms={p['permissions']}"
+            )
+
+        section(f"send_message({token!r}, 'hello from smoke test')")
+        sent = server.send_message(token, "hello from smoke test")
+        msg_id = sent["id"]
+        print(f"  sent id={msg_id}")
+
+        section(f"edit_message({token!r}, {msg_id}, 'edited by smoke test')")
+        print(f"  {server.edit_message(token, msg_id, 'edited by smoke test')}")
+
+        section(f"mark_as_read({token!r}, last_read_message={msg_id})")
+        print(f"  {server.mark_as_read(token, last_read_message=msg_id)}")
+
+        section(f"mark_as_unread({token!r})")
+        print(f"  {server.mark_as_unread(token)}")
+
+        section(f"wait_for_messages({token!r}, last_known_message_id={msg_id}, timeout=3)")
+        new = server.wait_for_messages(token, last_known_message_id=msg_id, timeout=3)
+        print(f"  returned {len(new)} message(s) after long-poll")
+
+        section(f"delete_message({token!r}, {msg_id})  [destructive, own message]")
+        print(f"  {server.delete_message(token, msg_id)}")
+    finally:
+        # Always clean up the throwaway room, even if a step above failed.
+        section(f"delete_conversation({token!r})  [cleanup of throwaway room]")
+        try:
+            print(f"  {server.delete_conversation(token)}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"  WARNING: cleanup failed, delete room {token!r} manually: {exc}")
+
+
+def main() -> int:
+    lifecycle = "--lifecycle" in sys.argv[1:]
+
+    try:
+        settings = Settings.from_env()
+    except NextcloudConfigError as exc:
+        print(f"[config] {exc}")
+        return 2
+
+    print(f"Target: {settings.nc_url}  (user: {settings.nc_user})")
+    print(f"Mode: {'lifecycle (creates + deletes a throwaway room)' if lifecycle else 'read-only'}")
+    server._client = OCSClient(settings)
+
+    read_only_checks(settings)
+    if lifecycle:
+        lifecycle_checks()
 
     section("DONE — all live checks ran")
     return 0
