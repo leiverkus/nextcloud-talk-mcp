@@ -58,11 +58,23 @@ class OCSClient:
     def close(self) -> None:
         self._client.close()
 
-    def get(self, path: str, *, params: dict[str, Any] | None = None) -> Any:
-        return self.request("GET", path, params=params)
+    def get(
+        self,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        timeout: float | None = None,
+    ) -> Any:
+        return self.request("GET", path, params=params, timeout=timeout)
 
     def post(self, path: str, *, data: dict[str, Any] | None = None) -> Any:
         return self.request("POST", path, data=data)
+
+    def put(self, path: str, *, data: dict[str, Any] | None = None) -> Any:
+        return self.request("PUT", path, data=data)
+
+    def delete(self, path: str, *, data: dict[str, Any] | None = None) -> Any:
+        return self.request("DELETE", path, data=data)
 
     def request(
         self,
@@ -71,14 +83,17 @@ class OCSClient:
         *,
         params: dict[str, Any] | None = None,
         data: dict[str, Any] | None = None,
+        timeout: float | None = None,
     ) -> Any:
         url = f"{self._base}{path}"
         retriable = method.upper() in _IDEMPOTENT_METHODS
         last_transport_exc: Exception | None = None
+        # Per-call timeout override; None means use the client's configured timeout.
+        request_timeout = httpx.USE_CLIENT_DEFAULT if timeout is None else timeout
 
         for attempt in range(self._max_retries + 1):
             try:
-                resp = self._client.request(method, url, params=params, data=data)
+                resp = self._client.request(method, url, params=params, data=data, timeout=request_timeout)
             except httpx.TransportError as exc:
                 last_transport_exc = exc
                 if retriable and attempt < self._max_retries:

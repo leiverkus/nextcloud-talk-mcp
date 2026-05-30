@@ -2,6 +2,43 @@
 
 ## Unreleased
 
+Tool-Erweiterung (Sub-Runde A): **13 neue Tools** über vier Domänen, jedes mit
+Test abgesichert. Endpunkte gegen die Spreed-OCS-Doku verifiziert; API-Versionen
+variieren pro Domäne (Konversation/Teilnehmer: `api/v4`, Chat/Read-Marker: `api/v1`).
+Reactions, Reminder und Dateianhänge folgen in Sub-Runde B.
+
+### Added
+
+- **Konversationsverwaltung** (`api/v4`): `create_conversation`,
+  `rename_conversation`, `set_description`, `delete_conversation`.
+- **Teilnehmerverwaltung** (`api/v4`): `list_participants`, `add_participant`,
+  `remove_participant`, `set_participant_permissions`. Letzteres nimmt
+  lesbare boolesche Flags (`can_publish_audio`, `can_post_chat` …) entgegen
+  und baut daraus intern die Talk-Berechtigungs-Bitmaske; `mode` =
+  set / add / remove.
+- **Nachrichten** (`api/v1`): `edit_message`, `delete_message`.
+- **Read-Marker** (`api/v1`): `mark_as_read`, `mark_as_unread`.
+- **Long-Polling** (`api/v1`): `wait_for_messages` — blockiert serverseitig bis
+  zu `timeout` Sekunden (max 60) auf neue Nachrichten nach
+  `last_known_message_id`.
+- **MCP-Annotationen**: read-Tools tragen `readOnlyHint`, destruktive Tools
+  (`delete_message`, `delete_conversation`, `remove_participant`)
+  `destructiveHint` — MCP-Clients fragen vor Ausführung um Bestätigung.
+
+### Changed
+
+- **`OCSClient`**: neue `put()`/`delete()`-Wrapper (DELETE mit Body für
+  `remove_participant`); optionaler Per-Call-`timeout`-Override auf `get()`/
+  `request()`, damit der Long-Poll länger warten darf als der Default-Timeout.
+- **`read_messages`** und `wait_for_messages` teilen sich jetzt den
+  `_format_message`-Helfer (identisches Nachrichten-Schema).
+
+### Tests
+
+- 23 neue Tests (Methode/Endpunkt/Body/Schema jedes Tools, Bitmask-Berechnung,
+  Long-Poll-Parameter, put/delete-Wrapper, Timeout-Override). Gesamt: 58 Tests,
+  94 % Coverage.
+
 ---
 
 ## v0.1.0 - 2026-05-30

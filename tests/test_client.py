@@ -42,6 +42,34 @@ def test_post_sends_body(make_client):
     assert b"message=hi" in rec.last.content
 
 
+def test_put_sends_body(make_client):
+    client, rec = make_client(ocs_response(200, data={"id": 7, "message": "edited"}))
+    assert client.put("/api/v1/chat/abc/7", data={"message": "edited"}) == {"id": 7, "message": "edited"}
+    assert rec.last.method == "PUT"
+    assert b"message=edited" in rec.last.content
+
+
+def test_delete_sends_body(make_client):
+    client, rec = make_client(ocs_response(200, data={}))
+    client.delete("/api/v4/room/abc/attendees", data={"attendeeId": 11})
+    assert rec.last.method == "DELETE"
+    assert b"attendeeId=11" in rec.last.content
+
+
+def test_get_timeout_override_passed_through(make_client):
+    captured = {}
+
+    def handler(request):
+        captured["ext"] = request.extensions.get("timeout")
+        return ocs_response(200, data=[])
+
+    client, _ = make_client(handler)
+    client.get("/api/v1/chat/abc", params={"x": 1}, timeout=90)
+    # httpx records the per-request timeout in the request extensions.
+    assert captured["ext"] is not None
+    assert captured["ext"].get("read") == 90
+
+
 # --- OCS error codes on HTTP 200 -----------------------------------------
 
 
