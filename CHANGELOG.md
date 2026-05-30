@@ -35,9 +35,9 @@ Reactions, Reminder und Dateianhänge folgen in Sub-Runde B.
 
 ### Tests
 
-- 29 neue Tests (Methode/Endpunkt/Body/Schema jedes Tools, Bitmask-Berechnung,
-  Long-Poll-Parameter, put/delete-Wrapper, Timeout-Override). Gesamt: 64 Tests,
-  92 % Coverage.
+- 23 neue Tests (Methode/Endpunkt/Body/Schema jedes Tools, Bitmask-Berechnung,
+  Long-Poll-Parameter, put/delete-Wrapper, Timeout-Override). Gesamt: 58 Tests,
+  94 % Coverage.
 
 ---
 
