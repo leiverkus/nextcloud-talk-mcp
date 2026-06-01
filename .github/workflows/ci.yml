@@ -40,9 +40,10 @@ jobs:
       - name: Smoke script imports and reaches config check
         # Catches import/wiring drift in scripts/smoke_live.py (it isn't covered
         # by the unit tests). With no env vars it must exit 2 at the config
-        # check — any other exit (e.g. ImportError → 1) fails the job.
+        # check — any other exit (e.g. ImportError → 1) fails the job. The `if`
+        # captures the exit code without tripping the shell's errexit.
         run: |
-          env -u NC_URL -u NC_USER -u NC_APP_PASSWORD python scripts/smoke_live.py; rc=$?
+          if env -u NC_URL -u NC_USER -u NC_APP_PASSWORD python scripts/smoke_live.py; then rc=0; else rc=$?; fi
           test "$rc" -eq 2 || { echo "expected exit 2 (config error), got $rc"; exit 1; }
 
   git-install-verify:
