@@ -1,6 +1,13 @@
 # Changelog — nextcloud-talk-mcp
 
-## Unreleased
+## 1.0.1 — 2026-06-01
+
+First PyPI release. `pip install nextcloud-talk-mcp` now works (depends on
+`nextcloud-talk-core>=1.0.1` from PyPI).
+
+### Added
+
+- Published to PyPI via Trusted Publishing (OIDC), triggered by GitHub Releases.
 
 ### Fixed
 
@@ -12,6 +19,8 @@
 
 ### Changed
 
+- `nextcloud-talk-core` is now a versioned PyPI dependency
+  (`>=1.0.1,<2`) instead of a bare name.
 - Packaging modernised for PEP 639: `license = "MIT"` (SPDX) + `license-files`
   instead of the deprecated `license` table and `License ::` classifier;
   `setuptools>=77`. Wheels now build without deprecation warnings.

@@ -1,41 +1,56 @@
 name: Publish
 
-# Builds the nextcloud-talk-mcp distribution and uploads it to PyPI.
+# Publishes both packages to PyPI via Trusted Publishing (OIDC) — no API token
+# is stored. Triggered when a GitHub Release is published.
 #
-# NOT YET ARMED: triggered manually via workflow_dispatch only. To go live,
-# switch the trigger to `release: types: [published]` and register the trusted
-# publisher once on PyPI (project nextcloud-talk-mcp, this repo, workflow
-# publish.yml, environment pypi). Uses PyPI Trusted Publishing (OIDC) — no API
-# token is stored.
+# One-time setup on PyPI (per project): register a Trusted Publisher with
+#   owner   = leiverkus
+#   repo    = nextcloud-talk-mcp
+#   workflow = publish.yml
+#   environment = pypi
+# for BOTH projects: nextcloud-talk-core and nextcloud-talk-mcp.
+#
+# Ordering matters: the core is published first because the MCP server depends
+# on it. Both jobs are idempotent — if a version already exists on PyPI the
+# upload is skipped (skip-existing), so re-running a release is safe.
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
 
 jobs:
-  build:
+  publish-core:
     runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.12"
       - run: pip install build
-      # Build the MCP server package (the core is distributed via Git tag, not PyPI).
-      - run: python -m build packages/nextcloud-talk-mcp --outdir dist
-      - uses: actions/upload-artifact@v4
+      - run: python -m build packages/nextcloud-talk-core --outdir dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          name: dist
-          path: dist/
+          packages-dir: dist
+          skip-existing: true
 
-  publish:
-    needs: build
+  publish-mcp:
+    needs: publish-core
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v6.0.2
+      - uses: actions/setup-python@v6.2.0
         with:
-          name: dist
-          path: dist/
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build packages/nextcloud-talk-mcp --outdir dist
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          skip-existing: true

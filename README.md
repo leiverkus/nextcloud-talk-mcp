@@ -14,7 +14,7 @@ This is a monorepo with two packages under `packages/`:
 
 | Package | What it is |
 |---|---|
-| [`nextcloud-talk-core`](packages/nextcloud-talk-core) | The reusable, **MCP-free** OCS client: `TalkClient`, typed models, `OCSClient`, config, errors. Installable on its own via a Git tag — other projects (e.g. a polling bridge) depend on it directly. |
+| [`nextcloud-talk-core`](packages/nextcloud-talk-core) | The reusable, **MCP-free** OCS client: `TalkClient`, typed models, `OCSClient`, config, errors. On PyPI as `nextcloud-talk-core` — other projects (e.g. a polling bridge) depend on it directly. |
 | [`nextcloud-talk-mcp`](packages/nextcloud-talk-mcp) | The MCP server — a thin wrapper that exposes `TalkClient` as MCP tools. |
 
 The MCP server is the focus of this README; for embedding the client in your own Python code, see [`nextcloud-talk-core`](packages/nextcloud-talk-core) and the snippet under [Using the core directly](#using-the-core-directly).
@@ -78,7 +78,27 @@ Auth is via a Nextcloud **app password** (Basic Auth), which works even on SSO/S
 
 ## Installation
 
-Requires **Python ≥ 3.10**. The MCP server depends on the core package; install both from source:
+Requires **Python ≥ 3.10**. Both packages are on PyPI; installing the server pulls in the core automatically.
+
+### uvx (no install)
+
+```bash
+uvx nextcloud-talk-mcp
+```
+
+### pipx
+
+```bash
+pipx install nextcloud-talk-mcp
+```
+
+### pip
+
+```bash
+pip install nextcloud-talk-mcp
+```
+
+### From source
 
 ```bash
 git clone https://github.com/leiverkus/nextcloud-talk-mcp.git
@@ -87,14 +107,12 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -e packages/nextcloud-talk-core -e packages/nextcloud-talk-mcp
 ```
 
-This installs the `nextcloud-talk-mcp` entry point. (Neither package is published to PyPI; `uvx`/`pipx` are therefore not available yet.)
-
 ### Using the core directly
 
-To embed the Talk client in your own Python project (no MCP), depend on just the core package via a Git tag:
+To embed the Talk client in your own Python project (no MCP), depend on just the core package:
 
 ```bash
-pip install "git+https://github.com/leiverkus/nextcloud-talk-mcp.git@core-v1.0.0#subdirectory=packages/nextcloud-talk-core"
+pip install nextcloud-talk-core
 ```
 
 ```python
@@ -127,7 +145,25 @@ See [`.env.example`](.env.example) for a template. Missing or malformed variable
 
 ## Claude Desktop
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS). Point `command` at the virtualenv interpreter from the install above:
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+
+```json
+{
+  "mcpServers": {
+    "nextcloud-talk": {
+      "command": "uvx",
+      "args": ["nextcloud-talk-mcp"],
+      "env": {
+        "NC_URL": "https://cloud.example.com",
+        "NC_USER": "your-username",
+        "NC_APP_PASSWORD": "xxxxx-xxxxx-xxxxx-xxxxx"
+      }
+    }
+  }
+}
+```
+
+If you installed from source into a virtualenv, point `command` at that interpreter instead:
 
 ```json
 {
