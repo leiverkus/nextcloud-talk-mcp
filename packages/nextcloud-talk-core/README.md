@@ -5,14 +5,18 @@ A reusable, **MCP-free** Python client for the Nextcloud Talk (Spreed) OCS API.
 This is the shared core extracted from
 [`nextcloud-talk-mcp`](../nextcloud-talk-mcp): the HTTP/OCS layer, typed models,
 config, and errors, with no dependency on any MCP framework — so other projects
-(e.g. a polling bridge) can depend on it directly via a Git tag.
+(e.g. a polling bridge) can depend on it directly.
 
 ## Install
 
-Pin to a Git tag (not published to PyPI):
+```bash
+pip install nextcloud-talk-core
+```
+
+Or pin to a Git tag without PyPI:
 
 ```bash
-pip install "git+https://github.com/leiverkus/nextcloud-talk-mcp.git@core-v1.0.0#subdirectory=packages/nextcloud-talk-core"
+pip install "git+https://github.com/leiverkus/nextcloud-talk-mcp.git@core-v1.0.1#subdirectory=packages/nextcloud-talk-core"
 ```
 
 ## Use

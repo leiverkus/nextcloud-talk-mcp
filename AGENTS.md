@@ -14,7 +14,7 @@ separation is the whole point; never import fastmcp (or anything MCP) from the
 core.**
 
 ```
-packages/nextcloud-talk-core/        # reusable, MCP-free — published via Git tag, not PyPI
+packages/nextcloud-talk-core/        # reusable, MCP-free — on PyPI + Git tags
   src/nextcloud_talk_core/
     talk.py        # TalkClient — one domain method per Talk operation → models
     client.py      # OCSClient — HTTP, retries, OCS envelope → typed exceptions
@@ -118,15 +118,21 @@ mocks can't (e.g. the OCS-201 success case was found this way).
 
 ## Releases
 
-- **Core** (`nextcloud-talk-core`) is released via **Git tags** (`core-vX.Y.Z`),
-  not PyPI — the bridge pins to a tag. Its public API is a SemVer contract:
-  breaking changes to `TalkClient`/models need a major bump. Keep the version in
-  `packages/nextcloud-talk-core/pyproject.toml` and its CHANGELOG in sync with
-  the tag. The CI `git-install-verify` job exercises the exact
-  `pip install "git+...#subdirectory=packages/nextcloud-talk-core"` path the
-  bridge uses.
-- **MCP server** version lives in `packages/nextcloud-talk-mcp/pyproject.toml`
-  and `…/__init__.py` (`__version__`) — keep them in sync. Its CHANGELOG follows
-  Keep-a-Changelog. `.github/workflows/publish.yml` (PyPI Trusted Publishing,
-  `workflow_dispatch`-only) is not armed; doing so is a deliberate manual step.
+Both packages publish to **PyPI** via `.github/workflows/publish.yml` (Trusted
+Publishing / OIDC, no stored token), triggered when a **GitHub Release** is
+published. The workflow builds and uploads the core first, then the MCP server
+(which depends on it); both use `skip-existing`, so re-running a release is
+safe. A Trusted Publisher must be registered once **per PyPI project** (owner
+`leiverkus`, repo `nextcloud-talk-mcp`, workflow `publish.yml`, environment
+`pypi`).
+
+- **Versions** live in each package's `pyproject.toml` and the core/mcp
+  `__init__.py` (`__version__`) — keep all in sync. Bump core and mcp together;
+  the MCP server pins `nextcloud-talk-core>=X.Y.Z,<next-major`.
+- **Tags**: `vX.Y.Z` (mcp) and `core-vX.Y.Z` (core) on the release commit. The
+  core stays Git-tag-installable too — the CI `git-install-verify` job exercises
+  the `pip install "git+...#subdirectory=packages/nextcloud-talk-core"` path the
+  bridge can still use.
+- The public core API (`TalkClient`/models) is a SemVer contract: breaking
+  changes need a major bump.
 - Each package keeps its **own CHANGELOG** under its directory.

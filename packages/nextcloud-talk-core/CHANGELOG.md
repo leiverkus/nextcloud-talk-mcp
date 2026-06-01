@@ -4,7 +4,14 @@ Versioned via Git tags (`core-vX.Y.Z`); SemVer. The public API is `TalkClient`,
 `OCSClient`, `Settings`, the models, the errors, and `permissions_from_flags`.
 Breaking changes to that surface require a major bump.
 
-## Unreleased
+## core-v1.0.1 — 2026-06-01
+
+First PyPI release: `pip install nextcloud-talk-core`. Still installable via
+Git tag as before; PyPI is now the primary channel.
+
+### Added
+
+- Published to PyPI via Trusted Publishing (OIDC), triggered by GitHub Releases.
 
 ### Changed
 
