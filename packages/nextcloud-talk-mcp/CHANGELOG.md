@@ -1,5 +1,22 @@
 # Changelog — nextcloud-talk-mcp
 
+## 1.0.2 — 2026-06-01
+
+### Fixed
+
+- The `nextcloud-talk-mcp` console entry point now prints a clear
+  `Configuration error: …` message and exits 2 when `NC_URL` / `NC_USER` /
+  `NC_APP_PASSWORD` are missing, instead of dumping a `NextcloudConfigError`
+  traceback. (`main()` catches `NextcloudConfigError`.)
+
+### Changed
+
+- Pinned `fastmcp>=2,<4` (was `>=0.2`) so a future FastMCP major can't silently
+  break the server.
+- Rewrote the package README (shown on PyPI) to be self-contained with absolute
+  links, instead of short text with relative repo links that don't resolve on
+  PyPI.
+
 ## 1.0.1 — 2026-06-01
 
 First PyPI release. `pip install nextcloud-talk-mcp` now works (depends on

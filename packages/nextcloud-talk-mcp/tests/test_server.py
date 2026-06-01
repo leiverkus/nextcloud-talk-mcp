@@ -260,3 +260,18 @@ def test_tool_without_client_raises(monkeypatch):
     monkeypatch.setattr(server, "_talk", None)
     with pytest.raises(RuntimeError, match="not initialised"):
         server.list_conversations()
+
+
+def test_main_config_error_exits_cleanly(monkeypatch, capsys):
+    from nextcloud_talk_core import NextcloudConfigError
+
+    def boom():
+        raise NextcloudConfigError("NC_URL is not set.")
+
+    monkeypatch.setattr(server.TalkClient, "from_env", staticmethod(boom))
+    with pytest.raises(SystemExit) as exc:
+        server.main()
+    assert exc.value.code == 2
+    err = capsys.readouterr().err
+    assert "Configuration error" in err
+    assert "NC_URL is not set" in err

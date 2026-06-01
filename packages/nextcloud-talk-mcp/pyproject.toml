@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nextcloud-talk-mcp"
-version = "1.0.1"
+version = "1.0.2"
 description = "MCP server wrapping the Nextcloud Talk (Spreed) OCS API"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,8 +31,8 @@ classifiers = [
     "Topic :: Communications :: Chat",
 ]
 dependencies = [
-    "fastmcp>=0.2",
-    "nextcloud-talk-core>=1.0.1,<2",
+    "fastmcp>=2,<4",
+    "nextcloud-talk-core>=1.0.2,<2",
 ]
 
 [project.optional-dependencies]
