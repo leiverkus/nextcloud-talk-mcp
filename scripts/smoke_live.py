@@ -29,12 +29,13 @@ from __future__ import annotations
 import sys
 
 import nextcloud_talk_mcp.server as server
-from nextcloud_talk_mcp.client import OCSClient
-from nextcloud_talk_mcp.config import Settings
-from nextcloud_talk_mcp.errors import (
+from nextcloud_talk_core import (
     NextcloudAuthError,
     NextcloudConfigError,
     NextcloudNotFoundError,
+    OCSClient,
+    Settings,
+    TalkClient,
 )
 
 
@@ -220,7 +221,7 @@ def main() -> int:
     )
     if share_file is not None:
         print(f"Share file: {share_file}")
-    server._client = OCSClient(settings)
+    server._talk = TalkClient(settings)
 
     read_only_checks(settings)
     if lifecycle:
