@@ -1,5 +1,21 @@
 # Changelog — nextcloud-talk-mcp
 
+## Unreleased
+
+### Fixed
+
+- `scripts/smoke_live.py` imported the pre-extraction modules
+  (`nextcloud_talk_mcp.client/config/errors`) and set `server._client`; it now
+  imports from `nextcloud_talk_core` and wires a `TalkClient` onto
+  `server._talk`, and closes it in a `finally`. A CI step runs the script
+  without env vars and requires the config-error exit so this can't regress.
+
+### Changed
+
+- Packaging modernised for PEP 639: `license = "MIT"` (SPDX) + `license-files`
+  instead of the deprecated `license` table and `License ::` classifier;
+  `setuptools>=77`. Wheels now build without deprecation warnings.
+
 ## 1.0.0 — 2026-05-30
 
 First stable release: 24 tools covering the full Talk scope, built on

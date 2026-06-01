@@ -223,9 +223,12 @@ def main() -> int:
         print(f"Share file: {share_file}")
     server._talk = TalkClient(settings)
 
-    read_only_checks(settings)
-    if lifecycle:
-        lifecycle_checks(share_file=share_file)
+    try:
+        read_only_checks(settings)
+        if lifecycle:
+            lifecycle_checks(share_file=share_file)
+    finally:
+        server._talk.close()
 
     section("DONE — all live checks ran")
     return 0
