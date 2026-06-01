@@ -4,6 +4,15 @@ Versioned via Git tags (`core-vX.Y.Z`); SemVer. The public API is `TalkClient`,
 `OCSClient`, `Settings`, the models, the errors, and `permissions_from_flags`.
 Breaking changes to that surface require a major bump.
 
+## Unreleased
+
+### Changed
+
+- Packaging modernised for PEP 639: `license = "MIT"` (SPDX) + `license-files`
+  instead of the deprecated `license` table and `License ::` classifier;
+  `setuptools>=77`. Added a proper `README.md` (was `readme = "CHANGELOG.md"`).
+  Wheels now build without deprecation warnings.
+
 ## core-v1.0.0 — 2026-05-30
 
 First stable release. The public API (`TalkClient`, the models, `OCSClient`,
