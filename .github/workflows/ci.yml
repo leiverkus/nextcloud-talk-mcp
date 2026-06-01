@@ -37,6 +37,13 @@ jobs:
         run: pytest packages/nextcloud-talk-core/tests --cov=nextcloud_talk_core --cov-report=term-missing
       - name: Test mcp
         run: pytest packages/nextcloud-talk-mcp/tests --cov=nextcloud_talk_mcp --cov-report=term-missing
+      - name: Smoke script imports and reaches config check
+        # Catches import/wiring drift in scripts/smoke_live.py (it isn't covered
+        # by the unit tests). With no env vars it must exit 2 at the config
+        # check — any other exit (e.g. ImportError → 1) fails the job.
+        run: |
+          env -u NC_URL -u NC_USER -u NC_APP_PASSWORD python scripts/smoke_live.py; rc=$?
+          test "$rc" -eq 2 || { echo "expected exit 2 (config error), got $rc"; exit 1; }
 
   git-install-verify:
     # Verifies the real Git-install path the bridge repo relies on:

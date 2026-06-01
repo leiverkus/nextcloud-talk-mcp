@@ -74,7 +74,7 @@ Auth is via a Nextcloud **app password** (Basic Auth), which works even on SSO/S
 
 `token` always comes from `list_conversations()`. Conversation `type` codes: **1** = one-to-one, **2** = group, **3** = public, **4** = changelog, **6** = "Note to self".
 
-> **Write and destructive tools require confirmation.** Write tools carry a `readOnlyHint: false` annotation; destructive ones (`delete_message`, `delete_conversation`, `remove_participant`) additionally carry `destructiveHint: true`, so MCP clients prompt before running them. That confirmation step is intentional — do not bypass it, especially on shared or institutional channels.
+> **Write and destructive tools require confirmation.** Read-only tools carry a `readOnlyHint: true` annotation; destructive ones (`delete_message`, `delete_conversation`, `remove_participant`) carry `destructiveHint: true`. Write tools carry neither, so a well-behaved MCP client treats them as non-read-only and prompts before running them. That confirmation step is intentional — do not bypass it, especially on shared or institutional channels.
 
 ## Installation
 
@@ -94,7 +94,7 @@ This installs the `nextcloud-talk-mcp` entry point. (Neither package is publishe
 To embed the Talk client in your own Python project (no MCP), depend on just the core package via a Git tag:
 
 ```bash
-pip install "git+https://github.com/leiverkus/nextcloud-talk-mcp.git@core-v0.1.0#subdirectory=packages/nextcloud-talk-core"
+pip install "git+https://github.com/leiverkus/nextcloud-talk-mcp.git@core-v1.0.0#subdirectory=packages/nextcloud-talk-core"
 ```
 
 ```python
