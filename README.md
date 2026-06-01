@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%E2%80%933.13-blue.svg)](packages/nextcloud-talk-mcp/pyproject.toml)
 
-**An MCP server for Nextcloud Talk (Spreed) — list conversations, read and send messages, and resolve @-mentions straight from your agent.**
+**An MCP server for Nextcloud Talk (Spreed) — 24 tools covering conversations, messages, participants, reactions, reminders, and file sharing, straight from your agent.**
 
 The established Nextcloud MCP servers ([cbcoutinho](https://github.com/cbcoutinho/nextcloud-mcp-server), [No-Smoke](https://github.com/No-Smoke/nextcloud-mcp), [hithereiamaliff](https://github.com/hithereiamaliff/nextcloud-mcp)) cover Notes, Calendar, Contacts, Tables, and WebDAV — **but not Talk**. This project fills that gap: it wraps the Talk/Spreed OCS API as MCP tools, primarily for use with Claude Desktop on macOS.
 
@@ -187,7 +187,7 @@ Restart Claude Desktop; the tools then appear under the `nextcloud-talk` server.
 
 - **Use an app password, never your login password.** App passwords are revocable per-device under Settings → Security and never expose your real credentials.
 - **Keep secrets out of version control.** `.env` is gitignored; only `.env.example` (placeholders) is committed.
-- **Write tools prompt before running.** `send_message` is marked as a write operation so MCP clients ask for confirmation first. This is by design — leave it on.
+- **Write and destructive tools prompt before running.** Write tools (e.g. `send_message`) are not marked read-only, and destructive ones (`delete_message`, `delete_conversation`, `remove_participant`) carry `destructiveHint`, so MCP clients ask for confirmation first. This is by design — leave it on.
 
 ## Contributing
 
