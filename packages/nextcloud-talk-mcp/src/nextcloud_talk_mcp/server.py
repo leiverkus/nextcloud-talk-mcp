@@ -13,10 +13,11 @@ are intentional and must not be bypassed.
 
 from __future__ import annotations
 
+import sys
 from dataclasses import asdict
 
 from fastmcp import FastMCP
-from nextcloud_talk_core import Reaction, TalkClient, permissions_from_flags
+from nextcloud_talk_core import NextcloudConfigError, Reaction, TalkClient, permissions_from_flags
 
 mcp = FastMCP("nextcloud-talk")
 
@@ -312,7 +313,12 @@ def share_file_to_conversation(token: str, path: str, caption: str | None = None
 
 def main() -> None:
     global _talk
-    _talk = TalkClient.from_env()
+    try:
+        _talk = TalkClient.from_env()
+    except NextcloudConfigError as exc:
+        # Missing/invalid env vars: a clear message on stderr, not a traceback.
+        print(f"Configuration error: {exc}", file=sys.stderr)
+        raise SystemExit(2) from None
     try:
         mcp.run()
     finally:

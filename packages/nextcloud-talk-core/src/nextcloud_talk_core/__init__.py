@@ -11,7 +11,7 @@ Public API (SemVer-stable contract):
 
 # __version__ must be defined before importing submodules that read it
 # (client.py uses it for the User-Agent header).
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 from nextcloud_talk_core.client import OCSClient
 from nextcloud_talk_core.config import Settings
