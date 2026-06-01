@@ -39,10 +39,6 @@ jobs:
 
   publish-mcp:
     needs: publish-core
-    # TEMPORARILY DISABLED: the Trusted Publisher for the `nextcloud-talk-mcp`
-    # PyPI project is not registered yet, so an upload would fail. Re-enable by
-    # removing this `if: false` once the pending publisher exists on PyPI.
-    if: false
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
