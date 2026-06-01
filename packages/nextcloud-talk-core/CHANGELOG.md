@@ -1,8 +1,8 @@
 # Changelog — nextcloud-talk-core
 
-Versioned via Git tags (`core-vX.Y.Z`); SemVer. The public API is `TalkClient`,
-`OCSClient`, `Settings`, the models, the errors, and `permissions_from_flags`.
-Breaking changes to that surface require a major bump.
+Published to PyPI as `nextcloud-talk-core` and tagged `core-vX.Y.Z`; SemVer.
+The public API is `TalkClient`, `OCSClient`, `Settings`, the models, the errors,
+and `permissions_from_flags`. Breaking changes to that surface require a major bump.
 
 ## core-v1.0.1 — 2026-06-01
 
